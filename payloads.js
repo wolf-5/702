@@ -94,7 +94,7 @@ function write_payload(payload_writer, pld)
 	}else if(pld == "disableupdates"){
 		b64s=disableupdates;
 	}else if(pld == "webrte"){
-		b64s=webrte;	
+		b64s=webrte;		
 	}
 	var ua = Base64Binary.decode(b64s);
 	var i;
